@@ -1,3 +1,5 @@
+Standford Deep Learning exercises with solutions.
+
 stanford_dl_ex
 ==============
 
