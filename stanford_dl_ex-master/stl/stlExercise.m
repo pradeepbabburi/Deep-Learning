@@ -20,7 +20,7 @@ params.n=params.patchWidth^2;   % dimensionality of input to RICA
 params.lambda = 0.0005;   % sparsity cost
 params.numFeatures = 32; % number of filter banks to learn
 params.epsilon = 1e-2;   
-
+randsel = randi(10000,200,1); % A random selection of samples for visualization
 %% ======================================================================
 %  STEP 1: Load data from the MNIST database
 %
@@ -29,8 +29,8 @@ params.epsilon = 1e-2;
 %  change it.
 
 % Load MNIST database files
-mnistData   = loadMNISTImages('../common/train-images-idx3-ubyte');
-mnistLabels = loadMNISTLabels('../common/train-labels-idx1-ubyte');
+mnistData   = loadMNISTImages('../imagesMNIST/train-images-idx3-ubyte');
+mnistLabels = loadMNISTLabels('../imagesMNIST/train-labels-idx1-ubyte');
 
 numExamples = size(mnistData, 2);
 % 50000 of the data are pretended to be unlabelled
@@ -79,13 +79,22 @@ patches = samplePatches([unlabeledData,trainData],params.patchWidth,200000);
 options.Method = 'lbfgs';
 options.MaxFunEvals = Inf;
 options.MaxIter = 1000;
+options.useMex = 0;
+
 % You'll need to replace this line with RICA training code
-opttheta = randTheta;
+[patches, V] = preprocess(patches);
+figure('name','zca image patches');
+display_network(patches(:,randsel));
+fprintf('Program paused. Enter to begin RICA training. Ctrl-C to exit.\n');
+pause;
 
 %  Find opttheta by running the RICA on all the training patches.
 %  You will need to whitened the patches with the zca2 function 
 %  then call minFunc with the softICACost function as seen in the RICA exercise.
-%%% YOUR CODE HERE %%%
+m = sqrt(sum(patches.^2) + (1e-8));
+x = bsxfunwrap(@rdivide,patches,m);
+
+[opttheta, cost, exitflag] = minFunc( @(theta) softICACost(theta, x, params), randTheta, options);
 
 % reshape visualize weights
 W = reshape(opttheta, params.numFeatures, params.n);
@@ -131,19 +140,29 @@ randTheta2 = randTheta2(:);
 options.Method = 'lbfgs';
 options.MaxFunEvals = Inf;
 options.MaxIter = 300;
+options.useMex = 0;
 
 % optimize
-%%% YOUR CODE HERE %%%
-
+sfmax = @(p) softmax_regression_vec(p, trainFeatures, trainLabels, params.lambda);
+theta = minFunc(sfmax, randTheta2, options);
+theta = reshape(theta, [], numClasses);
 
 %%======================================================================
 %% STEP 5: Testing 
-% Compute Predictions on tran and test sets using softmaxPredict
+% Compute Predictions on train and test sets using softmaxPredict
 % and softmaxModel
-%%% YOUR CODE HERE %%%
+
+% Print out training accuracy.
+trainAccuracy = multi_classifier_accuracy(theta,trainFeatures,trainLabels);
+fprintf('Training accuracy: %2.1f%%\n', 100*trainAccuracy);
+
+% Print out test accuracy.
+testAccuracy = multi_classifier_accuracy(theta,testFeatures,testLabels);
+fprintf('Test accuracy: %2.1f%%\n', 100*testAccuracy);
+
 % Classification Score
-fprintf('Train Accuracy: %f%%\n', 100*mean(train_pred(:) == trainLabels(:)));
-fprintf('Test Accuracy: %f%%\n', 100*mean(pred(:) == testLabels(:)));
+%fprintf('Train Accuracy: %f%%\n',100*mean(train_pred(:) == trainLabels(:)));
+%fprintf('Test Accuracy: %f%%\n', 100*mean(pred(:) == testLabels(:)));
 % You should get 100% train accuracy and ~99% test accuracy. With random
 % convolutional weights we get 97.5% test accuracy. Actual results may
 % vary as a result of random initializations

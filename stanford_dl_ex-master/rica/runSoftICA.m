@@ -9,7 +9,7 @@ addpath ../common/minFunc_2012/minFunc/compiled
 % with these values after you have a working solution.
 global params;
 params.m = 10000; % num patches
-params.patchWidth = 18; % width of a patch
+params.patchWidth = 8; % width of a patch
 params.n = params.patchWidth^2; % dimensionality of input to RICA
 params.lambda = 0.0005; % sparsity cost
 params.numFeatures = 50; % number of filter banks to learn

@@ -1,5 +1,1 @@
-function [patches, mean_patch, V] = preprocess(patches)
-
-%[patches, mean_patch] = removeDC(patches,2);
-mean_patch = [];
-[patches,V,E,D] = zca2(patches);
+function [patches, V] = preprocess(patches)%[patches, mean_patch] = removeDC(patches,2);epsilon = 0.1;mean_patch = mean(patches, 1);patches = bsxfun(@minus, patches, mean_patch);sigma = (patches * patches') / size(patches, 2);[U, S, ~] = svd(sigma);V = U * diag(1./sqrt(diag(S) + epsilon)) * U';patches = V * patches;
